@@ -27,8 +27,10 @@ jobs:
       # 🐳 Build and push image
       - name: Build and push image
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner }}/python-microservice:latest .
-          docker push ghcr.io/${{ github.repository_owner }}/python-microservice:latest
+            IMAGE=ghcr.io/${{ github.repository_owner,, }}/python-microservice:latest
+            echo "Image: $IMAGE"
+            docker build -t $IMAGE .
+            docker push $IMAGE
 
       # 🔐 Deploy to EC2 (Minikube)
       - name: Deploy to EC2 Minikube
