@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: python-microservice
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: python-microservice
@@ -16,17 +16,14 @@ spec:
         - name: app
           image: python-microservice:ci
           ports:
-          - containerPort: 8000
-          envFrom:
-            - configMapRef:
-                name: app-config
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: 8000
-            initialDelaySeconds: 10
+            - containerPort: 8000
           readinessProbe:
             httpGet:
               path: /health
               port: 8000
-            initialDelaySeconds: 5
+            initialDelaySeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 20
