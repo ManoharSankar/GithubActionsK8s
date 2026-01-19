@@ -9,3 +9,4 @@ jobs:
           - uses: actions/checkout@v4
           - name: Build Docker Image
             run: docker build -t python-microservice -f docker/Dockerfile .
+            run: docker run -p 8000:8000 python-microservice
