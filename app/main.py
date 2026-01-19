@@ -14,3 +14,4 @@ def health():
 @app.get("/config")
 def config():
     return {"service_name": settings.SERVICE_NAME}
+
