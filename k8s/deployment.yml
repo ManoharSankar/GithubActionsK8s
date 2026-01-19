@@ -19,7 +19,7 @@ spec:
           - containerPort: 8000
           envFrom:
             - configMapRef:
-              name: app-config
+                name: app-config
           livenessProbe:
             httpGet:
               path: /health
