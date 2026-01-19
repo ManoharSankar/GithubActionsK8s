@@ -11,6 +11,9 @@ jobs:
         # Install Kind
           - name: Install kind
             uses: helm/kind-action@v1.10.0
+            with:
+                cluster_name: kind
+                run: kubectl get nodes
         # Build the image
           - name: Build Docker Image
             run: docker build -t python-microservice:ci -f docker/Dockerfile .
