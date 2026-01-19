@@ -34,11 +34,11 @@ jobs:
       # 5️⃣ Deploy manifests
       - name: Deploy to Kubernetes
         run: kubectl apply -f k8s/
-
-        - name: Debug pods
-            run: |
-                kubectl get pods
-                kubectl describe pods
+    # Pods Debug
+      - name: Debug pods
+        run: |
+            kubectl get pods
+            kubectl describe pods
 
 
       # 6️⃣ Wait for rollout
