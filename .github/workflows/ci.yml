@@ -1,53 +1,44 @@
-name: Kubernetes CI with kind
+name: CI-CD
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
-  kind-ci:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      # 1️⃣ Create kind cluster
-      - name: Create kind cluster
-        uses: helm/kind-action@v1.10.0
+      # 🔐 Login to GHCR
+      - name: Login to GHCR
+        uses: docker/login-action@v3
         with:
-          cluster_name: kind
-          wait: 120s
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 2️⃣ Verify cluster
-      - name: Verify cluster
-        run: kubectl get nodes
-
-      # 3️⃣ Build Docker image
-      - name: Build Docker image
-        run: docker build -t python-microservice:ci -f docker/Dockerfile .
-
-      # 4️⃣ Load image into kind
-      - name: Load image into kind
-        run: kind load docker-image python-microservice:ci
-
-      # 5️⃣ Deploy manifests
-      - name: Deploy to Kubernetes
-        run: kubectl apply -f k8s/
-    # Pods Debug
-      - name: Debug pods
+      # 🐳 Build and push image
+      - name: Build and push image
         run: |
-            kubectl get pods
-            kubectl describe pods
+          docker build -t ghcr.io/${{ github.repository_owner }}/python-microservice:latest .
+          docker push ghcr.io/${{ github.repository_owner }}/python-microservice:latest
 
-
-      # 6️⃣ Wait for rollout
-      - name: Wait for deployment
-        run: kubectl rollout status deployment/python-microservice
-
-      # 7️⃣ Smoke test
-      - name: Smoke test
-        run: |
-          kubectl port-forward svc/python-microservice 8080:80 &
-          sleep 10
-          curl -f http://localhost:8080/health
+      # 🔐 Deploy to EC2 (Minikube)
+      - name: Deploy to EC2 Minikube
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            kubectl config use-context minikube
+            kubectl apply -f k8s/
+            kubectl set image deployment/python-microservice app=ghcr.io/${{ github.repository_owner }}/python-microservice:latest
+            kubectl rollout status deployment/python-microservice
