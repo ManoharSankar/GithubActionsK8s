@@ -1,35 +1,47 @@
-name: CIPipeline
-on:
-    push:
-        branches: ["main"]
-jobs:
-    build:
-        runs-on: ubuntu-latest
-        steps:
-          - uses: actions/checkout@v4
+name: Kubernetes CI with kind
 
-        # Install Kind
-          - name: Install kind
-            uses: helm/kind-action@v1.10.0
-            with:
-                cluster_name: kind
-                run: kubectl get nodes
-        # Build the image
-          - name: Build Docker Image
-            run: docker build -t python-microservice:ci -f docker/Dockerfile .
-        # Load the image into cluster kind
-          - name: Load image to kind
-            run: kind load docker-image python-microservice:ci
-        # Update the image in deployment
-          - name: set image
-            run: kubectl set image deployment/python-microservice app=python-microservice:ci || true
-        #Apply Manifests
-          - name: Deploy to kind
-            run: kubectl apply -f k8s/
-        # Wait for rollout
-          - name: wait for pods
-            run: kubectl rollout status deployment/python-microservice
-        # smoke test
-          - name: Test service
-            run: kubectl port-forward svc/python-microservice 8000:80 & sleep 5 
-                 curl http://localhost:8000/health
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  kind-ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 1️⃣ Create kind cluster
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.10.0
+        with:
+          cluster_name: kind
+          wait: 120s
+
+      # 2️⃣ Verify cluster
+      - name: Verify cluster
+        run: kubectl get nodes
+
+      # 3️⃣ Build Docker image
+      - name: Build Docker image
+        run: docker build -t python-microservice:ci -f docker/Dockerfile .
+
+      # 4️⃣ Load image into kind
+      - name: Load image into kind
+        run: kind load docker-image python-microservice:ci
+
+      # 5️⃣ Deploy manifests
+      - name: Deploy to Kubernetes
+        run: kubectl apply -f k8s/
+
+      # 6️⃣ Wait for rollout
+      - name: Wait for deployment
+        run: kubectl rollout status deployment/python-microservice
+
+      # 7️⃣ Smoke test
+      - name: Smoke test
+        run: |
+          kubectl port-forward svc/python-microservice 8080:80 &
+          sleep 10
+          curl -f http://localhost:8080/health
