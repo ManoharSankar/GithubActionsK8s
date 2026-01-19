@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: app
-          image: python-microservice:latest
+          image: python-microservice:ci
           ports:
           - containerPort: 8000
           envFrom:
